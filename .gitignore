@@ -1,3 +1,5 @@
 tmp*
 .env
 images/
+__pycache__/
+.DS_Store
