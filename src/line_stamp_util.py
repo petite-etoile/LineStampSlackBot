@@ -5,7 +5,7 @@ import re
 # LINEスタンプSTOREのURLを取得する関数
 def get_line_store_url():
     # LINEスタンプSTOREのURL
-    line_store_url = 'https://store.line.me/stickershop/product/24945321/ja'
+    line_store_url = 'https://store.line.me/stickershop/product/13281401/ja?from=sticker'
     return line_store_url
 
 # 入力で与えられたLINEスタンプSTOREに含まれるLINEスタンプのURLを取得する関数
@@ -22,7 +22,7 @@ def get_line_stamp_urls(line_store_url):
 
     # background-imageのURLを抽出
     line_stamp_urls = []
-    for span in set(span_tags):
+    for span in span_tags:
         # style属性を取得
         style = span.get('style')
 
@@ -31,10 +31,8 @@ def get_line_stamp_urls(line_store_url):
             match = re.search(r'url\((.*?)\);', style)
             if match:
                 stamp_image_url = match.group(1)
-                print(stamp_image_url)
                 line_stamp_urls.append(stamp_image_url)
-    
-    return line_stamp_urls
+    return set(line_stamp_urls)
 
 # 入力で与えられたLINEスタンプを保存する関数
 def save_line_stamps(line_stamp_urls:list):
