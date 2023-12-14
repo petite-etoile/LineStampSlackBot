@@ -3,13 +3,17 @@ from bs4 import BeautifulSoup
 import re
 
 
-# LINEスタンプSTOREのURLを取得する関数
-def get_line_store_url():
-    # LINEスタンプSTOREのURL
-    line_store_url = (
-        "https://store.line.me/stickershop/product/13281401/ja?from=sticker"
-    )
-    return line_store_url
+# 入力で与えられたLINEスタンプを保存する関数
+def save_line_stamps(line_store_url, stamp_name="line_stamp"):
+    # line storeに含まれるLINEスタンプのURLを取得
+    line_stamp_urls = get_line_stamp_urls(line_store_url)
+
+    # LINEスタンプすべてを保存
+    IMAGE_DIR = "images"
+    for idx, stamp_image_url in enumerate(line_stamp_urls):
+        __download_image(
+            stamp_image_url, "{}/{}{:0>2}.png".format(IMAGE_DIR, stamp_name, idx)
+        )
 
 
 # 入力で与えられたLINEスタンプSTOREに含まれるLINEスタンプのURLを取得する関数
@@ -39,18 +43,13 @@ def get_line_stamp_urls(line_store_url):
     return set(line_stamp_urls)
 
 
-# 入力で与えられたLINEスタンプを保存する関数
-def save_line_stamps(line_stamp_urls: list):
-    IMAGE_DIR = "images"
-    for idx, stamp_image_url in enumerate(line_stamp_urls):
-        download_image(
-            stamp_image_url, "{}/line_stamp{:0>2}.png".format(IMAGE_DIR, idx)
-        )
-
-
 # 入力で与えられたURLの画像をダウンロードする関数
-def download_image(image_url, image_save_path):
+def __download_image(image_url, image_save_path):
     response = requests.get(image_url)
     if response.status_code == 200:
         with open(image_save_path, "wb") as file:
             file.write(response.content)
+
+
+def validate_line_store_url(url):
+    r"^https://store.line.me/stickershop/product/[0-9]+/$"

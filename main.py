@@ -1,4 +1,4 @@
-from slack_app import SlackApp
+from src.slack_app import SlackApp
 
 
 def main():

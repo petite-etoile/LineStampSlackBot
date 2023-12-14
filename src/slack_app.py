@@ -2,6 +2,7 @@ import os
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from dotenv import load_dotenv
+from src.line_stamp_util import get_line_stamp_urls, save_line_stamps
 
 
 class SlackApp:
@@ -19,6 +20,7 @@ class SlackApp:
 
         # イベントハンドラのセット
         self.app.event("app_mention")(self.handle_app_mention)
+        self.app.command("/add-line-stamp")(self.handle_command)
 
     # 環境変数を.envファイルから読み込む
     def load_env(self):
@@ -55,9 +57,29 @@ class SlackApp:
             reaction = "thumbsup"  # 追加するリアクション（例: "thumbsup"）
 
             # リアクションを追加
-            app.client.reactions_add(
+            self.app.client.reactions_add(
                 channel=channel_id, timestamp=timestamp, name=reaction
             )
             print("Reaction added")
         except Exception as e:
             print(f"Error adding reaction: {e}")
+
+    def handle_command(self, ack, command, say):
+        # コマンドを受け取ったことを確認
+        ack()
+
+        message = command["text"]
+        args = message.split()
+
+        if len(args) != 2:
+            # say("引数が不正です")
+            return
+
+        url = args[0]
+        stamp_name = args[1]
+
+        response_messages = ["*叩かれたコマンド*", f"`/add-line-stamp {command['text']}`", ""]
+        save_line_stamps(url, stamp_name)
+
+        print("\n".join(response_messages))
+        say("\n".join(response_messages))
