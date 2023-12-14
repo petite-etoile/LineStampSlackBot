@@ -24,9 +24,25 @@ else:
 # メンションを検知するイベントリスナー
 @app.event("app_mention")
 def handle_app_mention(event, say):
-    user = event["user"]
-    say(f"こんにちは <@{user}>! 何か手伝えることはありますか？")
-    print("AA")
+    print("----------------------------")
+    for key,val in event.items():
+        print(key,val)
+
+    # メッセージにリアクションをつける
+    try:
+        channel_id = event["channel"]
+        timestamp = event["ts"]  # メッセージのタイムスタンプ
+        reaction = "thumbsup"    # 追加するリアクション（例: "thumbsup"）
+
+        # リアクションを追加
+        app.client.reactions_add(
+            channel=channel_id,
+            timestamp=timestamp,
+            name=reaction
+        )
+        print("Reaction added")
+    except Exception as e:
+        print(f"Error adding reaction: {e}")
 
 # Botを起動
 if __name__ == "__main__":
