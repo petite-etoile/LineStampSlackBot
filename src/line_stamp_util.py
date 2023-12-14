@@ -15,6 +15,12 @@ def save_line_stamps(line_store_url, stamp_name="line_stamp"):
             stamp_image_url, "{}/{}{:0>2}.png".format(IMAGE_DIR, stamp_name, idx)
         )
 
+    # 保存したLINEスタンプのファイルパスを返す
+    images_file_paths = [
+        f"{IMAGE_DIR}/{stamp_name}{idx:0>2}.png" for idx in range(len(line_stamp_urls))
+    ]
+    return images_file_paths
+
 
 # 入力で与えられたLINEスタンプSTOREに含まれるLINEスタンプのURLを取得する関数
 def get_line_stamp_urls(line_store_url):
@@ -49,7 +55,3 @@ def __download_image(image_url, image_save_path):
     if response.status_code == 200:
         with open(image_save_path, "wb") as file:
             file.write(response.content)
-
-
-def validate_line_store_url(url):
-    r"^https://store.line.me/stickershop/product/[0-9]+/$"

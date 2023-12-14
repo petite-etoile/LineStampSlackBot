@@ -2,7 +2,10 @@ import os
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from dotenv import load_dotenv
-from src.line_stamp_util import get_line_stamp_urls, save_line_stamps
+from src.line_stamp_util import (
+    save_line_stamps,
+)
+from src.validation import validate_args, validate_line_store_url
 
 
 class SlackApp:
@@ -65,21 +68,37 @@ class SlackApp:
             print(f"Error adding reaction: {e}")
 
     def handle_command(self, ack, command, say):
-        # コマンドを受け取ったことを確認
-        ack()
+        try:
+            # コマンドを受け取ったことを確認
+            ack()
 
-        message = command["text"]
-        args = message.split()
+            message = command["text"]
+            channel = command["channel_id"]
+            args = message.split()
 
-        if len(args) != 2:
-            # say("引数が不正です")
-            return
+            # コマンドの叩き方をチェックして不適切だったらエラーメッセージを返す
+            error_message = validate_args(command)
+            if error_message:
+                say(error_message)
+                return
 
-        url = args[0]
-        stamp_name = args[1]
+            # コマンドの引数をパース
+            url = args[0]
+            stamp_name = args[1]
 
-        response_messages = ["*叩かれたコマンド*", f"`/add-line-stamp {command['text']}`", ""]
-        save_line_stamps(url, stamp_name)
+            response_messages = ["*叩かれたコマンド*", f"`/add-line-stamp {message}`", ""]
+            stamps_file_paths = save_line_stamps(url, stamp_name)
 
-        print("\n".join(response_messages))
-        say("\n".join(response_messages))
+            try:
+                self.app.client.files_upload(
+                    channels=channel,
+                    file=stamps_file_paths[0],
+                    initial_comment="\n".join(response_messages),
+                )
+            except Exception as e:
+                print(f"ファイルのアップロード中にエラーが発生しました: {e}")
+
+            print("\n".join(response_messages))
+            say("\n".join(response_messages))
+        except Exception as e:
+            say(f"予期せぬエラーが発生しました: {e}")
