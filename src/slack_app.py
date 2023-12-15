@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from src.line_stamp_util import (
     save_line_stamps,
 )
-from src.validation import validate_args, validate_line_store_url
+from src.validation import validate_args
 
 
 class SlackApp:
@@ -22,7 +22,6 @@ class SlackApp:
         self.check_slack_app()
 
         # イベントハンドラのセット
-        self.app.event("app_mention")(self.handle_app_mention)
         self.app.command("/add-line-stamp")(self.handle_command)
 
     # 環境変数を.envファイルから読み込む
@@ -47,34 +46,18 @@ class SlackApp:
             print("Error with Bot token:", response["error"])
             exit(1)
 
-    # メンションを検知するイベントリスナー
-    def handle_app_mention(self, event, say):
-        print("----------------------------")
-        for key, val in event.items():
-            print(key, val)
-
-        # メッセージにリアクションをつける
-        try:
-            channel_id = event["channel"]
-            timestamp = event["ts"]  # メッセージのタイムスタンプ
-            reaction = "thumbsup"  # 追加するリアクション（例: "thumbsup"）
-
-            # リアクションを追加
-            self.app.client.reactions_add(
-                channel=channel_id, timestamp=timestamp, name=reaction
-            )
-            print("Reaction added")
-        except Exception as e:
-            print(f"Error adding reaction: {e}")
-
     def handle_command(self, ack, command, say):
+        """
+        /add-line-stampコマンドを叩かれたら呼ばれる関数
+
+        1. 引数のチェック
+        2. LINEスタンプを保存（スクレイピング）
+        3. LINEスタンプをSlack絵文字として登録
+        4. Slackに結果を投稿
+        """
         try:
             # コマンドを受け取ったことを確認
             ack()
-
-            message = command["text"]
-            channel = command["channel_id"]
-            args = message.split()
 
             # コマンドの叩き方をチェックして不適切だったらエラーメッセージを返す
             error_message = validate_args(command)
@@ -83,22 +66,35 @@ class SlackApp:
                 return
 
             # コマンドの引数をパース
-            url = args[0]
-            stamp_name = args[1]
+            url, stamp_name = command["text"].split()
 
-            response_messages = ["*叩かれたコマンド*", f"`/add-line-stamp {message}`", ""]
+            # LINEスタンプを保存
             stamps_file_paths = save_line_stamps(url, stamp_name)
 
-            try:
-                self.app.client.files_upload(
-                    channels=channel,
-                    file=stamps_file_paths[0],
-                    initial_comment="\n".join(response_messages),
-                )
-            except Exception as e:
-                print(f"ファイルのアップロード中にエラーが発生しました: {e}")
+            # LINEスタンプをSlack絵文字として登録
+            self._register_line_stamps_to_slack(stamp_name, stamps_file_paths)
 
-            print("\n".join(response_messages))
-            say("\n".join(response_messages))
+            # Slackに結果を投稿
+            self._post_result_to_channel(command, stamps_file_paths[0])
+
         except Exception as e:
-            say(f"予期せぬエラーが発生しました: {e}")
+            say(f"予期せぬエラーが発生しました: \n\n{e}")
+
+    # LINEスタンプをSlack絵文字として登録する関数
+    def _register_line_stamps_to_slack(self, stamp_name, stamps_file_paths):
+        pass
+
+    # Slackに結果を投稿する関数
+    def _post_result_to_channel(self, command, thumbnail_path):
+        args = command["text"]
+        channel = command["channel_id"]
+
+        response_messages = ["*叩かれたコマンド*", f"`/add-line-stamp {args}`", ""]
+        try:
+            self.app.client.files_upload_v2(
+                channel=channel,
+                file=thumbnail_path,
+                initial_comment="\n".join(response_messages),
+            )
+        except Exception as e:
+            print(f"ファイルのアップロード中にエラーが発生しました: {e}")
