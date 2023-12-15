@@ -44,5 +44,5 @@ def validate_args(command):
 
 
 def validate_line_store_url(url):
-    pattern = r"^https://store.line.me/stickershop/product/[0-9]+/$"
+    pattern = r"^https://store.line.me/stickershop/product/[0-9]+"
     return re.match(pattern, url) is None
