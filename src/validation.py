@@ -1,12 +1,15 @@
 import re
 
 USAGE_MESSAGE = """```
-Usage: /add-line-stamp [LINE STOREのURL] [登録絵文字名]
+Usage: 
+    /add-line-stamp [LINE STOREのURL] [登録絵文字名]
 
-期待しているURLの形式: https://store.line.me/stickershop/product/[0-9]+
-登録絵文字名: 20文字以下
+Args:
+    期待しているURLの形式: https://store.line.me/stickershop/product/[0-9]+
+    登録絵文字名: 20文字以下
 
-Example: /add-line-stamp https://store.line.me/stickershop/product/24945321/ja  LOVOT
+Example: 
+    /add-line-stamp https://store.line.me/stickershop/product/24945321/ja  LOVOT
 ```
 """
 
