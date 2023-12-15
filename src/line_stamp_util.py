@@ -46,7 +46,7 @@ def get_line_stamp_urls(line_store_url):
             if match:
                 stamp_image_url = match.group(1)
                 line_stamp_urls.append(stamp_image_url)
-    return set(line_stamp_urls)
+    return sorted(list(set(line_stamp_urls)))
 
 
 # 入力で与えられたURLの画像をダウンロードする関数
