@@ -38,5 +38,4 @@ class SlackApp {
   }
 }
 
-const slackApp = new SlackApp();
-slackApp.start();
+module.exports = SlackApp;
