@@ -1,0 +1,19 @@
+{
+  "name": "line_stamp",
+  "version": "1.0.0",
+  "description": "LINE のスタンプストアの URL を入力すると、LINE のスタンプを SLACK の絵文字に登録する API LINE のスタンプストアの URL 例：https://store.line.me/stickershop/product/24945321/ja",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/petite-etoile/LineStampSlackBot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/petite-etoile/LineStampSlackBot/issues"
+  },
+  "homepage": "https://github.com/petite-etoile/LineStampSlackBot#readme"
+}
