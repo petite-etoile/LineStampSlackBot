@@ -55,3 +55,5 @@ saveLineStamps("https://store.line.me/stickershop/product/24945321/ja").then(
     console.log("Downloaded images:", paths);
   }
 );
+
+module.exports = { saveLineStamps };
