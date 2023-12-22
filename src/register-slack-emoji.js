@@ -1,15 +1,11 @@
 const { Builder, By, Key, until } = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
-const path = require("path");
+const fs = require("fs");
+const FormData = require("form-data");
+const { default: axios } = require("axios");
+
+// 環境変数の読み込み
 require("dotenv").config();
-
-// formのidのプレフィックス
-const uploadFormIdPrefix = "petit_upload_form";
-const emojiNameInputIdPrefix = "petit_emoji_name_input";
-const emojiFileInputIdPrefix = "petit_emoji_file_input";
-const tokenInputIdPrefix = "petit_token_input";
-const modeInputIdPrefix = "petit_mode_input";
-
 const workspace = process.env.SLACK_WORKSPACE;
 
 async function registerAllLineStampsToSlack(
@@ -20,37 +16,34 @@ async function registerAllLineStampsToSlack(
   const driver = await buildSeleniumDriver();
 
   let results = null;
+  let cookie = null;
+  let token = null;
   try {
     // サインイン
     await signInToSlack(driver);
 
-    // 各絵文字のアップロード用のフォーム挿入
-    for (let idx = 0; idx < stampsFilePathList.length; idx++) {
-      await insertUploadForm(driver, idx);
-    }
-
-    // 全ての絵文字の登録処理を並列で実行
-    const registrationPromises = stampsFilePathList.map(
-      (stampsFilePath, idx) => {
-        const emojiName = `${emojiNamePrefix}_${idx}`;
-        const stampsAbsoluteFilePath = path.resolve(stampsFilePath);
-
-        return registerOneLineStampToSlack(
-          driver,
-          emojiName,
-          stampsAbsoluteFilePath,
-          idx
-        );
-      }
-    );
-    // すべての絵文字の登録処理が終わるまで待機
-    results = await Promise.all(registrationPromises);
+    cookie = await getCookie(driver);
+    token = await getToken(driver);
   } catch (error) {
     results = error;
   } finally {
     // ドライバーを終了
     await driver.quit();
   }
+
+  // 全ての絵文字の登録処理を並列で実行
+  const registrationPromises = stampsFilePathList.map((stampsFilePath, idx) => {
+    const emojiName = `${emojiNamePrefix}_${idx}`;
+
+    return registerOneLineStampToSlack(
+      emojiName,
+      stampsFilePath,
+      cookie,
+      token
+    );
+  });
+  // すべての絵文字の登録処理が終わるまで待機
+  results = await Promise.all(registrationPromises);
   console.log(results);
   return results;
 }
@@ -96,87 +89,46 @@ async function signInToSlack(driver) {
   console.log("completed sign in to Slack");
 }
 
-// ページにアップロード用のフォームを挿入する関数
-async function insertUploadForm(driver, idx) {
-  console.log("Inserting upload form...");
+// Cookieを取得する関数
+async function getCookie(driver) {
+  const cookies = await driver.manage().getCookies();
+  return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
+}
 
-  // フォームのidを設定
-  const uploadFormId = uploadFormIdPrefix + idx.toString();
-  const emojiNameInputId = emojiNameInputIdPrefix + idx.toString();
-  const emojiFileInputId = emojiFileInputIdPrefix + idx.toString();
-  const tokenInputId = tokenInputIdPrefix + idx.toString();
-  const modeInputId = modeInputIdPrefix + idx.toString();
-
-  // ページにフォームを挿入するスクリプト
-  const insertUploadFormScript = `
-    const uploadFormId = "${uploadFormIdPrefix + idx.toString()}";
-    const form = document.createElement('form');
-    const token = window.boot_data.api_token;
-    
-    form.id = uploadFormId;
-    form.innerHTML = \`
-        <input id="${emojiNameInputId}" name="name">
-        <input type="file" id="${emojiFileInputId}" name="image">
-        <input type="hidden" id="${tokenInputId}" name="token" value="\${token}">
-        <input type="hidden" id="${modeInputId}" name="mode" value="data">
-    \`;
-    document.body.append(form);
-  `;
-
-  await driver.executeScript(insertUploadFormScript);
-
-  console.log("completed insert upload form");
+// APIトークンを取得する関数
+async function getToken(driver) {
+  return driver.executeScript("return window.boot_data.api_token;");
 }
 
 // 1つのLINEスタンプをSlack絵文字として登録する関数
 async function registerOneLineStampToSlack(
-  driver,
   emojiName,
   stampsFilePath,
-  idx
+  cookie,
+  token
 ) {
-  // フォームのidを設定
-  const uploadFormId = uploadFormIdPrefix + idx.toString();
-  const emojiNameInputId = emojiNameInputIdPrefix + idx.toString();
-  const emojiFileInputId = emojiFileInputIdPrefix + idx.toString();
+  const url = `https://${workspace}.slack.com/api/emoji.add`;
 
-  // ファイルパスと絵文字名の設定
-  const fileInput = await driver.findElement(By.id(emojiFileInputId));
-  const emojiNameInput = await driver.findElement(By.id(emojiNameInputId));
+  // FormData作成
+  const formData = new FormData();
+  const file = fs.createReadStream(stampsFilePath);
+  formData.append("name", emojiName);
+  formData.append("image", file);
+  formData.append("token", token);
+  formData.append("mode", "data");
 
-  // フォームに値を入力
-  await fileInput.sendKeys(stampsFilePath);
-  await emojiNameInput.sendKeys(emojiName);
-
-  // フォームを送信するスクリプト
-  const sendEmojiAddFormScript = `
-    const workspace = '${workspace}';
-    const form = document.querySelector('#${uploadFormId}');
-    const formData = new FormData(form);
-
-    const response_json = await fetch(\`https://\${workspace}.slack.com/api/emoji.add\`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
+  return axios
+    .post(url, formData, {
+      headers: {
+        Cookie: cookie,
+      },
     })
-      .then(response => {
-        console.log(response);
-        return response.json();
-      })
-      .then(data => arguments[arguments.length-1](data)) // コールバック関数を実行して終了したことを伝える
-      .catch(error => arguments[arguments.length-1]({ error: error.toString() }));
-  `;
-
-  const result = await driver.executeAsyncScript(sendEmojiAddFormScript);
-  console.log(
-    `----------------------------------------------------------------
-result of registering :${emojiName}:
-${JSON.stringify(result, null, 2)}
-----------------------------------------------------------------`
-  );
-  return result;
+    .then((response) => {
+      return { name: emojiName, ...response.data };
+    })
+    .catch((error) => {
+      return { name: emojiName, error };
+    });
 }
-
-registerAllLineStampsToSlack("TEST", ["images/TEST00.png"]);
 
 module.exports = registerAllLineStampsToSlack;
