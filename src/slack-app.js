@@ -1,7 +1,7 @@
 const { App } = require("@slack/bolt");
 require("dotenv").config();
 const { saveLineStamps } = require("./line-stamp-util");
-const slackClient = require("./slack-client");
+const registerAllLineStampsToSlack = require("./register-slack-emoji");
 
 class SlackApp {
   constructor() {
@@ -44,7 +44,7 @@ class SlackApp {
    * 4. Slackに結果を投稿
    */
   async handleCommand(ack, command, say) {
-    console.log("\n\n----handleCommand----\n");
+    console.log("\n\n=================== handleCommand ===================\n");
     console.log(command);
 
     try {
@@ -73,9 +73,9 @@ class SlackApp {
       await this.#postResultToChannel(command, stamps_file_paths[0]);
     } catch (ex) {
       console.error(ex);
-      console.log("---------------------");
+      console.log("=====================");
       console.error(ex.name);
-      console.log("---------------------");
+      console.log("=====================");
       console.error(ex.errors);
       // slack側でエラー文を見れるように
       // await say(`予期せぬエラーが発生しました: \n\n${ex}`);
@@ -85,6 +85,8 @@ class SlackApp {
   // LINEスタンプをSlack絵文字として登録する関数
   #registerLineStampsToSlack(stampName, stampsFilePaths) {
     console.log("start register line stamps to slack");
+
+    registerAllLineStampsToSlack(stampName, stampsFilePaths);
 
     console.log("end register line stamps to slack");
   }

@@ -13,22 +13,37 @@ async function registerAllLineStampsToSlack(
   // Seleniumのドライバーをビルド
   const driver = await buildSeleniumDriver();
 
-  // サインイン
-  await signInToSlack(driver);
+  let results = null;
+  try {
+    // サインイン
+    await signInToSlack(driver);
 
-  // アップロード用のフォーム挿入
-  await insertUploadForm(driver);
+    // アップロード用のフォーム挿入
+    await insertUploadForm(driver);
 
-  // 全ての絵文字を登録する
-  for (const [idx, stampsFilePath] of stampsFilePathList.entries()) {
-    // 登録する絵文字名
-    const emojiName = `${emojiNamePrefix}${idx.toString().padStart(2, "0")}`;
-    // 絶対パスに変換
-    const stampsAbsoluteFilePath = path.resolve(stampsFilePath);
+    // 全ての絵文字の登録処理を並列で実行
+    const registrationPromises = stampsFilePathList.map(
+      (stampsFilePath, idx) => {
+        const emojiName = `${emojiNamePrefix}_${idx}`;
+        const stampsAbsoluteFilePath = path.resolve(stampsFilePath);
 
-    registerOneLineStampToSlack(emojiName, stampsAbsoluteFilePath, driver);
-    return;
+        return registerOneLineStampToSlack(
+          emojiName,
+          stampsAbsoluteFilePath,
+          driver
+        );
+      }
+    );
+    // すべての絵文字の登録処理が終わるまで待機
+    results = await Promise.all(registrationPromises);
+    console.log(results);
+  } catch (error) {
+    results = error;
+  } finally {
+    // ドライバーを終了
+    await driver.quit();
   }
+  return results;
 }
 
 // Seleniumのドライバーをビルドする関数
@@ -135,6 +150,9 @@ result of registering :${emojiName}:
 ${JSON.stringify(result, null, 2)}
 ----------------------------------------------------------------`
   );
+  return result;
 }
 
 registerAllLineStampsToSlack("TEST", ["images/TEST00.png"]);
+
+module.exports = registerAllLineStampsToSlack;
