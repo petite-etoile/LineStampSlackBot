@@ -49,9 +49,4 @@ async function downloadImage(imageUrl, imageSavePath) {
   fs.writeFileSync(imageSavePath, response.data);
 }
 
-// 使用例
-saveLineStamps("https://store.line.me/stickershop/product/24945321/ja").then(
-  (paths) => {
-    console.log("Downloaded images:", paths);
-  }
-);
+module.exports = { saveLineStamps };

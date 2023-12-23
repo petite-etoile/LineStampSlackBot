@@ -1,4 +1,6 @@
 const { App } = require("@slack/bolt");
+
+const handleAddLineStampCommand = require("@slack-app/event-handlers/handle-add-line-stamps");
 require("dotenv").config();
 
 class SlackApp {
@@ -14,9 +16,9 @@ class SlackApp {
       appToken: this.APP_TOKEN,
     });
 
-    // イベントハンドラのセット
+    // イベントハンドラのセット (LINEスタンプをSlack絵文字として登録)
     this.app.command("/add-line-stamp", async ({ ack, command, say }) => {
-      await this.handleCommand(ack, command, say);
+      await handleAddLineStampCommand(ack, command, say);
     });
   }
 
@@ -32,11 +34,6 @@ class SlackApp {
     await this.app.start();
     console.log("Bolt app is running!");
   }
-
-  async handleCommand(ack, command, say) {
-    // コマンドの処理
-  }
 }
 
-const slackApp = new SlackApp();
-slackApp.start();
+module.exports = SlackApp;
