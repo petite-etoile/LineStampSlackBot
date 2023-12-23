@@ -11,7 +11,7 @@ Args:
     登録絵文字名: 小文字、数字、'-'、'_'、全角文字（ひらがな、カタカナ、漢字）からなる20文字以下の文字列.
 
 Example: 
-    /add-line-stamp https://store.line.me/stickershop/product/24945321/ja  LOVOT
+    /add-line-stamp https://store.line.me/stickershop/product/24945321/ja lovot1
 \`\`\`
 `;
 

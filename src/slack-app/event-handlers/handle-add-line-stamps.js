@@ -102,7 +102,7 @@ async function postResultToChannel(say, command, results) {
 function getResponseMessageList(command, results) {
   responseMessageList = [
     `\`${command["command"]} ${command["text"]}\``,
-    "*===============結果===============*",
+    "*=============== 結果 ===============*",
   ];
   for (const result of results) {
     if (result.ok) {
