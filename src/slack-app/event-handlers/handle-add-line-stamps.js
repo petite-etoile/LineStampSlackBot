@@ -1,6 +1,9 @@
 const { saveLineStamps } = require("@utils/line-stamp-util");
 const registerAllLineStampsToSlack = require("@slack-app/slack-api-client/register-slack-emoji");
 const { convertResultsToString } = require("@utils/json-converter");
+const {
+  validateAddLineStampCommandArgs,
+} = require("@utils/validator/command-args-validator");
 
 /**
  * /add-line-stampコマンドを叩かれたら呼ばれる関数
@@ -24,14 +27,12 @@ async function handleAddLineStampCommand(ack, command, say) {
     // コマンドを受け取ったことを確認
     await ack();
 
-    // ToDo: コマンドの叩き方をチェックして不適切だったらエラーメッセージを返す
-    /* 
-    const error_message = validateArgs(command);
+    // コマンドの引数をチェックして不適切だったらエラーメッセージを返す
+    const error_message = validateAddLineStampCommandArgs(command);
     if (error_message) {
       await say(error_message);
       return;
-    } 
-    */
+    }
 
     // コマンドの引数をパース
     const [url, stamp_name] = command.text.split(" ");
