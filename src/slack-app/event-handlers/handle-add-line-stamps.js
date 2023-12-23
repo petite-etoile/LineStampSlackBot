@@ -48,12 +48,8 @@ async function handleAddLineStampCommand(ack, command, say) {
     // Slackに結果を投稿
     await postResultToChannel(say, command, result);
   } catch (error) {
-    // console.error(error.name);
-    // console.log("=====================");
-    // console.error(error.errors);
-    // slack側でエラー文を見れるように
-    // await say(`予期せぬエラーが発生しました: \n\n${error}`);
-    // sendErrorMessageToSlack(say, error);
+    // slack側にもエラーメッセージを投稿する
+    sendErrorMessageToSlack(say, command, error);
   }
 }
 
@@ -126,6 +122,34 @@ function getResponseMessageList(command, results) {
   return responseMessageList;
 }
 
+/**
+ * Slackにエラーメッセージを投稿する関数
+ * @param {function} say - Slackに投稿する関数
+ * @param {object} command - Slackコマンド情報
+ * @param {object} error - エラー情報
+ */
+async function sendErrorMessageToSlack(say, command, error) {
+  console.log("start send error message to slack");
+  const { ts } = await say(
+    `\`${command["command"]} ${command["text"]}\`` +
+      "\n" +
+      `予期せぬエラーが発生しました`
+  );
+
+  // エラーメッセージ(詳細)
+  const errorMessage = [
+    `*Error Occurred*`,
+    `>${error.message}`,
+    `>Stack Trace:`,
+    `\`\`\`${error.stack}\`\`\``,
+  ].join("\n");
+
+  console.log(errorMessage);
+  say({
+    text: errorMessage,
+    thread_ts: ts,
+  });
+  console.log("end send error message to slack");
 }
 
 module.exports = handleAddLineStampCommand;
